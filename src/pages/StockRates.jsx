@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { Box, Heading, Text, Select } from "@chakra-ui/react";
 import axios from "axios";
+import localforage from "localforage";
+
+const CACHE_KEY = "stock_rates_cache";
+const CACHE_EXPIRY = 3600000; // 1 hour in milliseconds
 
 const StockRates = () => {
   const [stockSymbol, setStockSymbol] = useState("AAPL");
@@ -8,13 +12,25 @@ const StockRates = () => {
   const [stocks, setStocks] = useState([]);
 
   useEffect(() => {
-    axios.get("https://api.twelvedata.com/stocks")
-      .then(response => {
-        setStocks(response.data.data);
-      })
-      .catch(error => {
-        console.error("Error fetching stock data:", error);
-      });
+    const fetchData = async () => {
+      const cachedData = await localforage.getItem(CACHE_KEY);
+      const now = new Date().getTime();
+
+      if (cachedData && now - cachedData.timestamp < CACHE_EXPIRY) {
+        setStocks(cachedData.data);
+      } else {
+        axios.get("https://api.twelvedata.com/stocks")
+          .then(response => {
+            setStocks(response.data.data);
+            localforage.setItem(CACHE_KEY, { data: response.data.data, timestamp: now });
+          })
+          .catch(error => {
+            console.error("Error fetching stock data:", error);
+          });
+      }
+    };
+
+    fetchData();
   }, []);
 
   useEffect(() => {
