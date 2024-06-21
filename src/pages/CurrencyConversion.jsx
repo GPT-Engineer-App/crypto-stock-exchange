@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
 import { Box, Heading, Text, Input, Button, Select } from "@chakra-ui/react";
+import localforage from "localforage";
+
+const CACHE_KEY = "currency_conversion_cache";
+const CACHE_EXPIRY = 3600000; // 1 hour in milliseconds
 import axios from "axios";
 
 const CurrencyConversion = () => {
@@ -10,13 +14,25 @@ const CurrencyConversion = () => {
   const [currencies, setCurrencies] = useState([]);
 
   useEffect(() => {
-    axios.get("https://api.exchangerate-api.com/v4/latest/USD")
-      .then(response => {
-        setCurrencies(Object.keys(response.data.rates));
-      })
-      .catch(error => {
-        console.error("Error fetching currency data:", error);
-      });
+    const fetchData = async () => {
+      const cachedData = await localforage.getItem(CACHE_KEY);
+      const now = new Date().getTime();
+
+      if (cachedData && now - cachedData.timestamp < CACHE_EXPIRY) {
+        setCurrencies(cachedData.data);
+      } else {
+        axios.get("https://api.exchangerate-api.com/v4/latest/USD")
+          .then(response => {
+            setCurrencies(Object.keys(response.data.rates));
+            localforage.setItem(CACHE_KEY, { data: Object.keys(response.data.rates), timestamp: now });
+          })
+          .catch(error => {
+            console.error("Error fetching currency data:", error);
+          });
+      }
+    };
+
+    fetchData();
   }, []);
 
   const convertCurrency = () => {

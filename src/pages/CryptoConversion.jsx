@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { Box, Heading, Text, Input, Button, Select } from "@chakra-ui/react";
 import axios from "axios";
+import localforage from "localforage";
+
+const CACHE_KEY = "crypto_conversion_cache";
+const CACHE_EXPIRY = 3600000; // 1 hour in milliseconds
 
 const CryptoConversion = () => {
   const [amount, setAmount] = useState(1);
@@ -10,13 +14,25 @@ const CryptoConversion = () => {
   const [cryptos, setCryptos] = useState([]);
 
   useEffect(() => {
-    axios.get("https://api.coingecko.com/api/v3/coins/list")
-      .then(response => {
-        setCryptos(response.data);
-      })
-      .catch(error => {
-        console.error("Error fetching crypto data:", error);
-      });
+    const fetchData = async () => {
+      const cachedData = await localforage.getItem(CACHE_KEY);
+      const now = new Date().getTime();
+
+      if (cachedData && now - cachedData.timestamp < CACHE_EXPIRY) {
+        setCryptos(cachedData.data);
+      } else {
+        axios.get("https://api.coingecko.com/api/v3/coins/list")
+          .then(response => {
+            setCryptos(response.data);
+            localforage.setItem(CACHE_KEY, { data: response.data, timestamp: now });
+          })
+          .catch(error => {
+            console.error("Error fetching crypto data:", error);
+          });
+      }
+    };
+
+    fetchData();
   }, []);
 
   const convertCrypto = () => {
