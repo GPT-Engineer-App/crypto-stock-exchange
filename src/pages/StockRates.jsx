@@ -37,10 +37,16 @@ const StockRates = () => {
     if (stockSymbol) {
       axios.get(`https://api.twelvedata.com/price?symbol=${stockSymbol}&apikey=YOUR_API_KEY`)
         .then(response => {
-          setStockRate(response.data.price);
+          const rate = response.data.price;
+          if (rate) {
+            setStockRate(rate);
+          } else {
+            setStockRate("Rate not available");
+          }
         })
         .catch(error => {
           console.error("Error fetching stock rate:", error);
+          setStockRate("Error fetching stock rate");
         });
     }
   }, [stockSymbol]);

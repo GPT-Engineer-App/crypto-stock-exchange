@@ -36,12 +36,18 @@ const StockPrices = () => {
   useEffect(() => {
     if (stockSymbol) {
       axios.get(`https://api.twelvedata.com/price?symbol=${stockSymbol}&apikey=YOUR_API_KEY`)
-        .then(response => {
-          setStockPrice(response.data.price);
-        })
-        .catch(error => {
-          console.error("Error fetching stock price:", error);
-        });
+      .then(response => {
+        const price = response.data.price;
+        if (price) {
+          setStockPrice(price);
+        } else {
+          setStockPrice("Price not available");
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching stock price:", error);
+        setStockPrice("Error fetching stock price");
+      });
     }
   }, [stockSymbol]);
 

@@ -38,11 +38,16 @@ const CurrencyConversion = () => {
   const convertCurrency = () => {
     axios.get(`https://api.exchangerate-api.com/v4/latest/${fromCurrency}`)
       .then(response => {
-        const rate = response.data.rates[toCurrency];
-        setConversionResult(amount * rate);
+        const rate = response.data.rates?.[toCurrency];
+        if (rate) {
+          setConversionResult(amount * rate);
+        } else {
+          setConversionResult("Conversion rate not available");
+        }
       })
       .catch(error => {
         console.error("Error converting currency:", error);
+        setConversionResult("Error converting currency");
       });
   };
 

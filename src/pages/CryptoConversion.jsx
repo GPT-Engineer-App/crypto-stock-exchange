@@ -38,11 +38,16 @@ const CryptoConversion = () => {
   const convertCrypto = () => {
     axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${fromCrypto}&vs_currencies=${toCrypto}`)
       .then(response => {
-        const rate = response.data[fromCrypto][toCrypto];
-        setConversionResult(amount * rate);
+        const rate = response.data[fromCrypto]?.[toCrypto];
+        if (rate) {
+          setConversionResult(amount * rate);
+        } else {
+          setConversionResult("Conversion rate not available");
+        }
       })
       .catch(error => {
         console.error("Error converting crypto:", error);
+        setConversionResult("Error converting crypto");
       });
   };
 
